@@ -1,5 +1,6 @@
 package com.example.audiovideoplayer.ui.audio
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,13 +25,11 @@ import android.util.Log
 import androidx.compose.foundation.background
 
 @Composable
-fun AudioScreen(navController: NavController) {
-    val viewModel: AudioViewModel = viewModel()
-    val audioList by viewModel.audioList
+fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
+    val audioList by audioViewModel.audioList
 
     LaunchedEffect(Unit) {
-        viewModel.loadAudio()
-        Log.d("AudioScreen", "Audio List after loadAudio: ${audioList.size}")
+        audioViewModel.loadAudio()
     }
 
     Scaffold(
@@ -39,25 +38,18 @@ fun AudioScreen(navController: NavController) {
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
+                .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
             Text(text = "Music List", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            Log.d("AudioScreen", "Audio List before LazyColumn: ${audioList.size}")
-
             if (audioList.isEmpty()) {
                 Text("No audio files found.")
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f) // Let LazyColumn take up remaining space
-                ) {
+                LazyColumn {
                     items(audioList) { audio ->
-                        Log.d("AudioScreen", "Audio Item: ${audio.title}")
-                        AudioItem(audio)
+                        AudioItem(audio, navController, audioList)
                     }
                 }
             }
@@ -66,12 +58,17 @@ fun AudioScreen(navController: NavController) {
 }
 
 @Composable
-fun AudioItem(audio: AudioModel) {
+fun AudioItem(audio: AudioModel, navController: NavController, audioList: List<AudioModel>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable { /* Handle Click - Play Music */ },
+            .clickable {
+                val index = audioList.indexOf(audio)
+                val encodedPath = Uri.encode(audio.path)
+
+                navController.navigate("music_player/$index/$encodedPath")
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
