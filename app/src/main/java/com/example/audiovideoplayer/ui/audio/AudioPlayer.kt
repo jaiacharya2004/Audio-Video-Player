@@ -26,10 +26,10 @@ import androidx.compose.foundation.background
 
 @Composable
 fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
-    val audioList by audioViewModel.audioList
+    val audioList by audioViewModel.audioList.collectAsState()
 
     LaunchedEffect(Unit) {
-        audioViewModel.loadAudio()
+        audioViewModel.loadAudioList()
     }
 
     Scaffold(

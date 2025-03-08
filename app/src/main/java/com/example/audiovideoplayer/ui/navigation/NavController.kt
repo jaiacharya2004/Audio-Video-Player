@@ -32,11 +32,12 @@ fun NavGraph(navController: NavHostController, audioViewModel: AudioViewModel) {
                 navArgument("encodedSongPath") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
+            val index = backStackEntry.arguments?.getInt("index") ?: 0
             val encodedPath = backStackEntry.arguments?.getString("encodedSongPath") ?: ""
             val songPath = Uri.decode(encodedPath)
 
-            MusicPlayerScreen(navController, audioViewModel, index  )
+            MusicPlayerScreen(navController, audioViewModel, index)
         }
+
     }
 }
