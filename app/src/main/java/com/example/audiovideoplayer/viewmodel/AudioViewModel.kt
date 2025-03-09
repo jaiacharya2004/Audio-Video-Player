@@ -47,6 +47,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
                 Player.STATE_ENDED -> {
                     _isPlaying.value = false
                     _currentPosition.value = 0L
+                    playNext() // Auto-play next song
                 }
                 Player.STATE_READY -> {
                     _duration.value = exoPlayer.duration
@@ -58,7 +59,9 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
             _isPlaying.value = isPlaying
         }
 
-        override fun onPositionDiscontinuity(
+
+
+    override fun onPositionDiscontinuity(
             oldPosition: Player.PositionInfo,
             newPosition: Player.PositionInfo,
             reason: Int
@@ -96,22 +99,44 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun playSong(index: Int) {
-        viewModelScope.launch(Dispatchers.Main) { // Ensure UI update happens on Main thread
-            if (index in _audioList.value.indices) {
-                exoPlayer.stop()
-                exoPlayer.clearMediaItems()
+        viewModelScope.launch(Dispatchers.Main) {
+            if (index !in _audioList.value.indices) {
+                Log.e("AudioViewModel", "Invalid song index: $index")
+                return@launch
+            }
 
-                val mediaItem = MediaItem.fromUri(Uri.parse(_audioList.value[index].path))
+            val songPath = _audioList.value[index].path
+            val file = java.io.File(songPath)
+
+            if (!file.exists()) {
+                Log.e("AudioViewModel", "File not found: $songPath")
+                return@launch
+            }
+
+            val uri = Uri.fromFile(file) // Correctly format the URI
+
+            Log.d("AudioViewModel", "Playing song at index: $index, URI: $uri")
+
+            exoPlayer.stop()
+            exoPlayer.clearMediaItems()
+
+            try {
+                val mediaItem = MediaItem.fromUri(uri) // Use correctly formatted URI
                 exoPlayer.setMediaItem(mediaItem)
 
                 _currentSongIndex.value = index
                 _currentSong.value = _audioList.value[index]
 
                 exoPlayer.prepare()
-                exoPlayer.play() // Ensure playback starts
+                exoPlayer.play()
+
+            } catch (e: Exception) {
+                Log.e("AudioViewModel", "Error playing song: $songPath", e)
             }
         }
     }
+
+
 
 
     fun togglePlayPause() {

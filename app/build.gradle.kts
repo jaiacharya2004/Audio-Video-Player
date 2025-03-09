@@ -83,6 +83,11 @@ dependencies {
     // System UI Controller
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.31.6-rc") // Or latest
 
+    // Coil
+
+    implementation("io.coil-kt:coil-compose:2.2.2")
+
+
 
 
 

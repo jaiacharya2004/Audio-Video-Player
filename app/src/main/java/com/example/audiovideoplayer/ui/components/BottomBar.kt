@@ -3,9 +3,11 @@ package com.example.audiovideoplayer.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,33 +28,44 @@ fun BottomNavigationBar(navController: NavController, currentRoute: String, modi
     )
 
     NavigationBar(
-        modifier = modifier.fillMaxWidth().padding(bottom = 0.dp), // Ensures it's at the bottom
-        tonalElevation = 8.dp
+        modifier = modifier.fillMaxWidth().padding(bottom = 0.dp),
+        containerColor = Color.Black // Set bottom bar background to black
     ) {
         items.forEach { item ->
+            val isSelected = currentRoute == item.route
+            val iconTint = if (isSelected) Color.White else Color.Gray // White when selected, Gray when not
+            val textColor = if (isSelected) Color.White else Color.Gray
+
             NavigationBarItem(
                 icon = {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(top = 6.dp) // Added top padding for spacing
+                        modifier = Modifier.padding(top = 6.dp)
                     ) {
                         Image(
                             painter = painterResource(id = item.iconRes),
                             contentDescription = item.label,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
+                            colorFilter = ColorFilter.tint(iconTint) // Apply tint color to the icon
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = item.label,
                             fontSize = 12.sp,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            color = textColor // Apply text color based on selection
                         )
                     }
                 },
                 label = { Text("") }, // Hide default label
-                selected = currentRoute == item.route,
+                selected = isSelected,
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White, // Ensures selected icon is white
+                    unselectedIconColor = Color.Gray, // Ensures unselected icon is gray
+                    indicatorColor = Color.Transparent // Removes highlight effect
+                ),
                 onClick = {
-                    if (currentRoute != item.route) {
+                    if (!isSelected) {
                         navController.navigate(item.route)
                     }
                 }

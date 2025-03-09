@@ -1,6 +1,5 @@
 package com.example.audiovideoplayer.ui.audio
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,7 +23,6 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
     val currentPosition by audioViewModel.currentPosition.collectAsState()
     val duration by audioViewModel.duration.collectAsState()
 
-    val context = LocalContext.current
 
     LaunchedEffect(index, audioList) {
         if (audioList.isNotEmpty() && index in audioList.indices) {
@@ -78,35 +76,11 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                 )
             }
             IconButton(onClick = { audioViewModel.playNext() }, enabled = currentSongIndex < audioList.size - 1) {
-                Icon(painter = painterResource(id = R.drawable.next_svgrepo_com), contentDescription = "Next")
+                Icon(painter = painterResource(id = R.drawable.next_svgrepo_com__1_), contentDescription = "Next")
             }
         }
     }
     if (isPlaying && audioList.isNotEmpty()) {
         MiniPlayer(navController, audioViewModel, currentSongIndex)
-    }
-}
-
-@Composable
-fun MiniPlayer(navController: NavController, audioViewModel: AudioViewModel, currentIndex: Int) {
-    val songList by audioViewModel.audioList.collectAsState()
-    val currentSong = songList.getOrNull(currentIndex) ?: return
-
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { navController.navigate("musicPlayer/$currentIndex") }
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = currentSong.title,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
     }
 }
