@@ -2,7 +2,6 @@ package com.example.audiovideoplayer.ui.audio
 
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -23,7 +22,12 @@ import com.example.audiovideoplayer.R
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AudioItem(audio: AudioModel, navController: NavController, audioList: List<AudioModel>) {
+fun AudioItem(
+    audio: AudioModel,
+    navController: NavController,
+    audioList: List<AudioModel>,
+    onDeleteAudio: (AudioModel) -> Unit // Callback for deletion
+) {
     val musicImages = listOf(
         R.drawable.image_1, R.drawable.image_2, R.drawable.image_3,
         R.drawable.image_4, R.drawable.image_5, R.drawable.image_6,
@@ -41,6 +45,9 @@ fun AudioItem(audio: AudioModel, navController: NavController, audioList: List<A
                 onClick = {
                     val encodedPath = Uri.encode(audio.path)
                     navController.navigate("music_player/$index/$encodedPath")
+                },
+                onLongClick = {
+                    onDeleteAudio(audio) // Call delete function on long press
                 }
             ),
         verticalAlignment = Alignment.CenterVertically
@@ -68,7 +75,6 @@ fun AudioItem(audio: AudioModel, navController: NavController, audioList: List<A
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-
         }
     }
 }
