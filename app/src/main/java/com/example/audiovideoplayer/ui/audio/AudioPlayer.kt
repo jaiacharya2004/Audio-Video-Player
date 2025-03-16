@@ -21,6 +21,8 @@ import com.example.audiovideoplayer.viewmodel.AudioViewModel
 @Composable
 fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
     val audioList by audioViewModel.audioList.collectAsState()
+    val isPlaying by audioViewModel.isPlaying.collectAsState()
+    val currentSongIndex by audioViewModel.currentSongIndex.collectAsState()
     val context = LocalContext.current
 
     var fileToDelete by remember { mutableStateOf<AudioModel?>(null) }
@@ -32,12 +34,20 @@ fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
 
     Scaffold(
         topBar = { TopAppBarComponent(navController, title = "Audio") },
-        bottomBar = { BottomNavigationBar(navController, currentRoute = "audio") }
+        bottomBar = {
+            Column {
+                // MiniPlayer should always be visible when a song is selected
+                if (currentSongIndex in audioList.indices) {
+                    MiniPlayer(navController, audioViewModel, currentSongIndex)
+                }
+                BottomNavigationBar(navController, currentRoute = "audio")
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background((Color(0xFF1C1C1C)))
+                .background(Color(0xFF1C1C1C))
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
