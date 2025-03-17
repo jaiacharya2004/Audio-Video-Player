@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.audiovideoplayer.R
 import com.example.audiovideoplayer.viewmodel.AudioViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewModel, index: Int) {
@@ -23,6 +24,10 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
     val audioList by audioViewModel.audioList.collectAsState()
     val currentPosition by audioViewModel.currentPosition.collectAsState()
     val duration by audioViewModel.duration.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+
 
     // ✅ Ensure valid index before playing
     LaunchedEffect(index, audioList) {
@@ -35,14 +40,14 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
         if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
     }
 
-    val currentSong = audioList.getOrNull(index) ?: return
+    val currentSong = audioList.getOrNull(currentSongIndex) ?: return
 
     val musicImages = listOf(
         R.drawable.image_1, R.drawable.image_2, R.drawable.image_3,
         R.drawable.image_4, R.drawable.image_5, R.drawable.image_6,
         R.drawable.image_7, R.drawable.image_8
     )
-    val imageRes = remember(index) { musicImages[index % musicImages.size] }
+    val imageRes = remember(currentSongIndex) { musicImages[currentSongIndex % musicImages.size] }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(top = 36.dp, start = 16.dp, end = 16.dp),
@@ -121,7 +126,15 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 🔂 Repeat Button (Toggles Repeat Mode)
-            IconButton(onClick = { audioViewModel.toggleRepeatMode() }) {
+            IconButton(
+                onClick = {
+                    val newModeText = audioViewModel.toggleRepeatMode() // ✅ This should be a String
+                    scope.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss() // ✅ Dismiss any existing Snackbar
+                        snackbarHostState.showSnackbar(message = newModeText) // ✅ Show new Snackbar instantly
+                    }
+                }
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.loop_svgrepo_com),
                     contentDescription = "Repeat",
@@ -131,6 +144,9 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                     }
                 )
             }
+
+
+
 
 
             IconButton(onClick = { audioViewModel.playPrevious() }, enabled = currentSongIndex > 0) {
@@ -145,6 +161,10 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
             IconButton(onClick = { audioViewModel.playNext() }, enabled = currentSongIndex < audioList.size - 1) {
                 Icon(painter = painterResource(id = R.drawable.next_svgrepo_com__1_), contentDescription = "Next")
             }
+        }
+
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            SnackbarHost(hostState = snackbarHostState)
         }
     }
 }

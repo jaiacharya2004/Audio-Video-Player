@@ -79,13 +79,14 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
                 Player.STATE_ENDED -> {
                     _isPlaying.value = false
                     _currentPosition.value = 0L
-                    playNext() // Auto-play next song
+                    handlePlaybackCompletion()  // Call the function here ✅
                 }
                 Player.STATE_READY -> {
                     _duration.value = exoPlayer.duration
                 }
             }
         }
+
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _isPlaying.value = isPlaying
@@ -111,6 +112,9 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
         loadAudioList()
         exoPlayer.addListener(playerListener)
 
+        // Set ExoPlayer repeat mode to manual control
+        exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
+
         // Start coroutine to update progress
         viewModelScope.launch {
             while (true) {
@@ -120,21 +124,57 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+
+    private val _isLooping = MutableStateFlow(false)
+    val isLooping: StateFlow<Boolean> = _isLooping.asStateFlow()
+
+
     private fun handlePlaybackCompletion() {
         when (_repeatMode.value) {
-            RepeatMode.NO_REPEAT -> playNext()
-            RepeatMode.REPEAT_ONE -> playSong(_currentSongIndex.value)
-            RepeatMode.REPEAT_ALL -> playNext()
+            RepeatMode.REPEAT_ONE -> {
+                exoPlayer.seekTo(0)
+                exoPlayer.play()
+            }
+            RepeatMode.REPEAT_ALL -> {
+                val nextIndex = (_currentSongIndex.value + 1) % _audioList.value.size
+                playSong(nextIndex)
+            }
+            RepeatMode.NO_REPEAT -> {
+                val nextIndex = _currentSongIndex.value + 1
+                if (nextIndex < _audioList.value.size) {
+                    playSong(nextIndex)
+                }
+            }
         }
     }
 
-    fun toggleRepeatMode() {
+
+
+    fun toggleRepeatMode(): String {
         _repeatMode.value = when (_repeatMode.value) {
-            RepeatMode.NO_REPEAT -> RepeatMode.REPEAT_ONE
-            RepeatMode.REPEAT_ONE -> RepeatMode.REPEAT_ALL
-            RepeatMode.REPEAT_ALL -> RepeatMode.NO_REPEAT
+            RepeatMode.NO_REPEAT -> {
+                exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
+                RepeatMode.REPEAT_ONE
+            }
+            RepeatMode.REPEAT_ONE -> {
+                exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
+                RepeatMode.NO_REPEAT
+            }
+            else -> RepeatMode.NO_REPEAT
+        }
+        return getRepeatModeText() // ✅ Return the updated repeat mode as a String
+    }
+
+    private fun getRepeatModeText(): String {
+        return when (repeatMode.value) {
+            RepeatMode.REPEAT_ONE -> "Repeat One"
+            RepeatMode.REPEAT_ALL -> "Repeat All"
+            RepeatMode.NO_REPEAT -> "Repeat Off"
+            else -> "Unknown Mode"
         }
     }
+
+
 
 
     fun loadAudioList() {
@@ -149,51 +189,27 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
 
     fun playSong(index: Int) {
         viewModelScope.launch(Dispatchers.Main) {
-            if (index !in _audioList.value.indices) {
-                Log.e("AudioViewModel", "Invalid song index: $index")
-                return@launch
-            }
+            if (index !in _audioList.value.indices) return@launch
+
+            val song = _audioList.value[index]
+            val uri = Uri.fromFile(File(song.path))
 
             if (_currentSongIndex.value == index) {
-                // If it's the same song, just update the UI and keep the playback state unchanged.
-                _currentSong.value = _audioList.value[index]
-                return@launch
+                return@launch // Prevent unnecessary playback restart
             }
 
-            val songPath = _audioList.value[index].path
-            val file = File(songPath)
-
-            if (!file.exists()) {
-                Log.e("AudioViewModel", "File not found: $songPath")
-                return@launch
-            }
-
-            val uri = Uri.fromFile(file)
-
-            Log.d("AudioViewModel", "Playing new song at index: $index, URI: $uri")
 
             exoPlayer.stop()
             exoPlayer.clearMediaItems()
+            exoPlayer.setMediaItem(MediaItem.fromUri(uri))
+            exoPlayer.prepare()
+            exoPlayer.play()
 
-            try {
-                val mediaItem = MediaItem.fromUri(uri)
-                exoPlayer.setMediaItem(mediaItem)
-
-                _currentSongIndex.value = index
-                _currentSong.value = _audioList.value[index]
-
-                exoPlayer.prepare()
-
-                // **Don't auto-play if the previous song was paused**
-                if (_isPlaying.value) {
-                    exoPlayer.play()
-                }
-            } catch (e: Exception) {
-                Log.e("AudioViewModel", "Error playing song: $songPath", e)
-            }
+            _currentSongIndex.value = index
+            _currentSong.value = song.copy() // 🔹 Trigger recomposition
+            _isPlaying.value = true
         }
     }
-
 
     fun togglePlayPause() {
         if (_isPlaying.value) {

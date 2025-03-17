@@ -59,14 +59,17 @@ fun MiniPlayer(navController: NavController, audioViewModel: AudioViewModel, cur
                 if (currentIndex in songList.indices) {
                     val encodedPath = Uri.encode(currentSong.path)
 
-                    // Check if the same song is playing before calling playSong()
-                    if (audioViewModel.currentSongIndex.value != currentIndex) {
+                    // ✅ If the same song is playing, just navigate without restarting it
+                    if (audioViewModel.currentSongIndex.value == currentIndex) {
+                        navController.navigate("music_player/$currentIndex/$encodedPath")
+                    } else {
+                        // ✅ If a different song is tapped, play it
                         audioViewModel.playSong(currentIndex)
+                        navController.navigate("music_player/$currentIndex/$encodedPath")
                     }
-
-                    navController.navigate("music_player/$currentIndex/$encodedPath")
                 }
             }
+
     ) {
         Row(
             modifier = Modifier
