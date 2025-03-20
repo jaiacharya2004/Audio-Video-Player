@@ -167,8 +167,8 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun getRepeatModeText(): String {
         return when (repeatMode.value) {
-            RepeatMode.REPEAT_ONE -> "Repeat One"
-            RepeatMode.REPEAT_ALL -> "Repeat All"
+            RepeatMode.REPEAT_ONE -> "Repeat "
+            RepeatMode.REPEAT_ALL -> "Repeat "
             RepeatMode.NO_REPEAT -> "Repeat Off"
             else -> "Unknown Mode"
         }
