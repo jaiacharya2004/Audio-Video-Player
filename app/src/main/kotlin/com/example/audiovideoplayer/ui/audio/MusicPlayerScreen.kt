@@ -1,26 +1,36 @@
 package com.example.audiovideoplayer.ui.audio
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.audiovideoplayer.R
 import com.example.audiovideoplayer.viewmodel.AudioViewModel
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewModel, index: Int) {
     val isPlaying by audioViewModel.isPlaying.collectAsState()
@@ -31,6 +41,12 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
     val duration by audioViewModel.duration.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val swipeOffset = remember { Animatable(0f) }
+
+
+
+
+
 
     // ✅ Ensure valid index before playing
     LaunchedEffect(index, audioList) {
@@ -74,17 +90,48 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
         Spacer(modifier = Modifier.height(58.dp))
 
         // 🔹 Album Art
+
+
+
+
         Card(
             modifier = Modifier
                 .size(300.dp)
-                .padding(top = 16.dp),
+                .padding(top = 16.dp)
+                .offset { IntOffset(swipeOffset.value.roundToInt(), 0) } // 🔹 Smooth real-time movement
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            val threshold = 150f // 🔹 More natural swipe threshold
+                            val isNext = swipeOffset.value < -threshold
+                            val isPrevious = swipeOffset.value > threshold
+
+                            scope.launch {
+                                if (isNext || isPrevious) {
+                                    val targetOffset = if (isNext) -200f else 200f
+
+                                    swipeOffset.animateTo(targetOffset, tween(200, easing = FastOutSlowInEasing)) // 🔹 Smooth swipe
+                                    audioViewModel.playNextOrPrevious(isNext) // ✅ Change song
+                                    swipeOffset.animateTo(0f, tween(200, easing = FastOutSlowInEasing)) // 🔹 Natural reset
+                                } else {
+                                    swipeOffset.animateTo(0f, tween(200, easing = FastOutSlowInEasing)) // Snap back gently if not enough swipe
+                                }
+                            }
+                        }
+                    ) { _, dragAmount ->
+                        scope.launch {
+                            val newOffset = swipeOffset.value + dragAmount * 0.5f // 🔹 Reduce sensitivity (feels smoother)
+                            swipeOffset.snapTo(newOffset.coerceIn(-300f, 300f)) // 🔹 Limit movement
+                        }
+                    }
+                },
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Image(
                 painter = painterResource(id = imageRes),
                 contentDescription = "Album Art",
-                contentScale = ContentScale.Crop, // Ensures image fills the card while maintaining aspect ratio
-                modifier = Modifier.size(300.dp) // Keeps image size fixed
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(300.dp)
             )
         }
 
@@ -123,18 +170,81 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                 Text(text = formatTime(duration), style = MaterialTheme.typography.bodySmall, color = Color.White)
             }
 
+
+
+            val primaryColor = MaterialTheme.colorScheme.primary
+
+
             Slider(
                 value = progress,
                 onValueChange = { newValue ->
                     val seekPosition = (newValue * duration).toLong()
                     audioViewModel.seekTo(seekPosition)
                 },
-                modifier = Modifier.fillMaxWidth(),
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 0.dp),
+                colors = SliderColors(
+                    activeTrackColor = Color(0xFF6200EE),
+                    thumbColor = Color.White,
+                    inactiveTickColor = Color.Gray,
+                    disabledThumbColor = Color.DarkGray,
+                    disabledActiveTrackColor = Color.Gray,
+                    disabledInactiveTrackColor = Color.White,
+                    disabledInactiveTickColor = Color.Red,
+                    disabledActiveTickColor = Color.Yellow,
+                    activeTickColor = Color.Blue,
+                    inactiveTrackColor = Color.LightGray
+                ),
+                thumb = {
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier
+                            .size(14.dp) // Smaller circular thumb
+                        // Smaller circular thumb
+
+                    ) {
+                        drawCircle(color = primaryColor)
+                    }
+                },
+                track = { _ ->
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .clip(RoundedCornerShape(5.dp)), // Adjust thickness of the track
+                    ) {
+                        val width = size.width
+                        val height = size.height / 2
+                        drawLine(
+                            color = primaryColor,
+                            start = androidx.compose.ui.geometry.Offset(0f, height),
+                            end = androidx.compose.ui.geometry.Offset(progress * width, height),
+                            strokeWidth = size.height // Active part of the line
+                        )
+                        drawLine(
+                            color = Color.Gray,
+                            start = androidx.compose.ui.geometry.Offset(progress * width, height),
+                            end = androidx.compose.ui.geometry.Offset(width, height),
+                            strokeWidth = size.height // Inactive part of the line
+                        )
+                    }
+                }
             )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -171,7 +281,6 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
             // ⏪ Previous Button
             IconButton(
                 onClick = { audioViewModel.playPrevious() },
-                enabled = currentSongIndex > 0,
                 colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
             ) {
                 Icon(
@@ -191,10 +300,12 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                 )
             }
 
+
+
+
             // ⏩ Next Button
             IconButton(
                 onClick = { audioViewModel.playNext() },
-                enabled = currentSongIndex < audioList.size - 1,
                 colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
             ) {
                 Icon(
@@ -220,3 +331,4 @@ fun formatTime(ms: Long): String {
     val seconds = (ms / 1000) % 60
     return "%02d:%02d".format(minutes, seconds)
 }
+

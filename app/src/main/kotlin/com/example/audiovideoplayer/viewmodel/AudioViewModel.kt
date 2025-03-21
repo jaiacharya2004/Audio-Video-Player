@@ -24,8 +24,10 @@ import android.content.Context
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.provider.MediaStore
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.example.audiovideoplayer.MainActivity
 import com.example.audiovideoplayer.MainActivity.Companion.REQUEST_DELETE_PERMISSION
 import java.io.File
@@ -56,6 +58,9 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
     val duration: StateFlow<Long> = _duration.asStateFlow()
     private val _repeatMode = MutableStateFlow(RepeatMode.NO_REPEAT)
     val repeatMode: StateFlow<RepeatMode> = _repeatMode.asStateFlow()
+
+
+
 
     enum class RepeatMode {
         NO_REPEAT, REPEAT_ONE, REPEAT_ALL
@@ -119,7 +124,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             while (true) {
                 _currentPosition.value = exoPlayer.currentPosition
-                delay(1000) // Update every second
+                delay(200) // Update every second
             }
         }
     }
@@ -191,39 +196,68 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.Main) {
             if (index !in _audioList.value.indices) return@launch
 
-            val song = _audioList.value[index]
-            val uri = Uri.fromFile(File(song.path))
-
             if (_currentSongIndex.value == index) {
                 return@launch // Prevent unnecessary playback restart
             }
 
+            val song = _audioList.value[index]
+            val uri = Uri.fromFile(File(song.path))
 
+            // ✅ Update UI first to ensure recomposition
+            _currentSongIndex.value = index
+            _currentSong.value = song.copy()
+
+            // 🔹 Set media item & start playback
             exoPlayer.stop()
             exoPlayer.clearMediaItems()
             exoPlayer.setMediaItem(MediaItem.fromUri(uri))
             exoPlayer.prepare()
             exoPlayer.play()
 
-            _currentSongIndex.value = index
-            _currentSong.value = song.copy() // 🔹 Trigger recomposition
             _isPlaying.value = true
         }
     }
 
     fun togglePlayPause() {
         if (_isPlaying.value) {
+            val lastPosition = exoPlayer.currentPosition
             exoPlayer.pause()
+            exoPlayer.seekTo(lastPosition) // Prevent overshooting
         } else {
             exoPlayer.play()
         }
     }
 
+
+    fun playNextOrPrevious(isNext: Boolean) {
+        val listSize = _audioList.value.size
+        if (listSize == 0) return
+
+        val newIndex = if (isNext) {
+            (_currentSongIndex.value + 1) % listSize  // Moves forward, loops back to 0
+        } else {
+            (_currentSongIndex.value - 1 + listSize) % listSize  // Moves backward, loops to last song
+        }
+
+        playSong(newIndex)
+    }
+
+
+
+
+
     fun seekTo(positionMs: Long) {
         viewModelScope.launch(Dispatchers.Main) {
             exoPlayer.seekTo(positionMs)
+
+            // Prevent flicker by disabling state updates for a moment
+            _isPlaying.value = exoPlayer.playWhenReady
         }
     }
+
+
+
+
 
     fun playNext() {
         val currentIndex = _currentSongIndex.value
