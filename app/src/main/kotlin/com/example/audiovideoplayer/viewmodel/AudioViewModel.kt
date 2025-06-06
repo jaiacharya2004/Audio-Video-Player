@@ -196,18 +196,12 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.Main) {
             if (index !in _audioList.value.indices) return@launch
 
-            if (_currentSongIndex.value == index) {
-                return@launch // Prevent unnecessary playback restart
-            }
-
             val song = _audioList.value[index]
-            val uri = Uri.fromFile(File(song.path))
+            val uri = Uri.parse(song.path)
 
-            // ✅ Update UI first to ensure recomposition
             _currentSongIndex.value = index
             _currentSong.value = song.copy()
 
-            // 🔹 Set media item & start playback
             exoPlayer.stop()
             exoPlayer.clearMediaItems()
             exoPlayer.setMediaItem(MediaItem.fromUri(uri))

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.audiovideoplayer.ui.components.BottomNavigationBar
 import com.example.audiovideoplayer.ui.components.TopAppBarComponent
+import com.example.audiovideoplayer.utils.RequestAudioPermission
 import com.example.audiovideoplayer.viewmodel.AudioViewModel
 
 @Composable
@@ -24,6 +26,16 @@ fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
     val isPlaying by audioViewModel.isPlaying.collectAsState()
     val currentSongIndex by audioViewModel.currentSongIndex.collectAsState()
     val context = LocalContext.current
+
+
+    var hasPermission by remember { mutableStateOf(false) }
+
+    RequestAudioPermission { granted ->
+        hasPermission = granted
+    }
+
+
+
 
     var fileToDelete by remember { mutableStateOf<AudioModel?>(null) }
     var showDialog by remember { mutableStateOf(false) }

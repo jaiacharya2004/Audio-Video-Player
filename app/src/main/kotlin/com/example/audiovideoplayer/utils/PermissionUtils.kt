@@ -9,40 +9,29 @@ import com.google.accompanist.permissions.*
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun RequestAudioPermission(onPermissionGranted: (Boolean) -> Unit) {
-    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_AUDIO
-        Manifest.permission.READ_EXTERNAL_STORAGE
-        Manifest.permission.READ_MEDIA_VIDEO
-
+    val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        listOf(
+            Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_MEDIA_VIDEO
+        )
     } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
+        listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
-    val permissionState = rememberPermissionState(permission = permission)
+    val permissionState = rememberMultiplePermissionsState(permissions = permissions)
 
-    LaunchedEffect(permissionState.status) {
-        if (permissionState.status.isGranted) {
+    LaunchedEffect(permissionState.allPermissionsGranted) {
+        if (permissionState.allPermissionsGranted) {
             onPermissionGranted(true)
         } else {
-            permissionState.launchPermissionRequest()
+            permissionState.launchMultiplePermissionRequest()
         }
     }
 
-    if (permissionState.status.shouldShowRationale) {
-        AlertDialog(
-            onDismissRequest = { onPermissionGranted(false) },
-            title = { Text("Permission Required") },
-            text = { Text("We need access to your media files to show audio.") },
-            confirmButton = {
-                TextButton(onClick = { permissionState.launchPermissionRequest() }) {
-                    Text("Grant")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { onPermissionGranted(false) }) {
-                    Text("Deny")
-                }
-            }
+    if (permissionState.shouldShowRationale) {
+        PermissionRationaleDialog(
+            onRequestPermission = { permissionState.launchMultiplePermissionRequest() },
+            onDeny = { onPermissionGranted(false) }
         )
     }
 }
@@ -52,7 +41,7 @@ fun PermissionRationaleDialog(onRequestPermission: () -> Unit, onDeny: () -> Uni
     AlertDialog(
         onDismissRequest = onDeny,
         title = { Text("Permission Required") },
-        text = { Text("This app needs access to your audio files to display them.") },
+        text = { Text("This app needs access to your media files to display and play them.") },
         confirmButton = {
             Button(onClick = onRequestPermission) {
                 Text("Allow")
