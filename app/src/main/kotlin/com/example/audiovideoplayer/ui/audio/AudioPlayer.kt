@@ -27,28 +27,38 @@ fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
     val currentSongIndex by audioViewModel.currentSongIndex.collectAsState()
     val context = LocalContext.current
 
-
     var hasPermission by remember { mutableStateOf(false) }
 
+    // These are needed for delete dialog control
+    var fileToDelete by remember { mutableStateOf<AudioModel?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    // Request audio permission, update hasPermission
     RequestAudioPermission { granted ->
         hasPermission = granted
     }
 
+    // Load audio only after permission granted
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) {
+            audioViewModel.loadAudioList()
+        }
+    }
 
-
-
-    var fileToDelete by remember { mutableStateOf<AudioModel?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        audioViewModel.loadAudioList()
+    if (!hasPermission) {
+        Box(
+            Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color.White)
+        }
+        return
     }
 
     Scaffold(
         topBar = { TopAppBarComponent(navController, title = "Audio") },
         bottomBar = {
             Column {
-                // MiniPlayer should always be visible when a song is selected
                 if (currentSongIndex in audioList.indices) {
                     MiniPlayer(navController, audioViewModel, currentSongIndex)
                 }
@@ -87,7 +97,6 @@ fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
         }
     }
 
-    // Delete Confirmation Dialog
     if (showDialog && fileToDelete != null) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -123,3 +132,4 @@ fun AudioScreen(navController: NavController, audioViewModel: AudioViewModel) {
         )
     }
 }
+

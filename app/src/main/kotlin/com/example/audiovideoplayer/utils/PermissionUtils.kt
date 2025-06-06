@@ -9,32 +9,40 @@ import com.google.accompanist.permissions.*
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun RequestAudioPermission(onPermissionGranted: (Boolean) -> Unit) {
-    val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        listOf(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO
-        )
+    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_AUDIO
     } else {
-        listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        Manifest.permission.READ_EXTERNAL_STORAGE
     }
 
-    val permissionState = rememberMultiplePermissionsState(permissions = permissions)
+    val permissionState = rememberPermissionState(permission)
 
-    LaunchedEffect(permissionState.allPermissionsGranted) {
-        if (permissionState.allPermissionsGranted) {
-            onPermissionGranted(true)
-        } else {
-            permissionState.launchMultiplePermissionRequest()
+    // Monitor permission status changes
+    LaunchedEffect(permissionState.status) {
+        when (permissionState.status) {
+            is PermissionStatus.Granted -> onPermissionGranted(true)
+            is PermissionStatus.Denied -> {
+                // Notify denied only if user permanently denied (don't ask again) or just denied?
+                // Here we just notify false to caller.
+                onPermissionGranted(false)
+            }
         }
     }
 
-    if (permissionState.shouldShowRationale) {
+    // Show rationale dialog if needed
+    if (permissionState.status is PermissionStatus.Denied && permissionState.status.shouldShowRationale) {
         PermissionRationaleDialog(
-            onRequestPermission = { permissionState.launchMultiplePermissionRequest() },
+            onRequestPermission = { permissionState.launchPermissionRequest() },
             onDeny = { onPermissionGranted(false) }
         )
+    } else if (!permissionState.status.isGranted) {
+        // Request permission when no rationale and not granted yet
+        SideEffect {
+            permissionState.launchPermissionRequest()
+        }
     }
 }
+
 
 @Composable
 fun PermissionRationaleDialog(onRequestPermission: () -> Unit, onDeny: () -> Unit) {

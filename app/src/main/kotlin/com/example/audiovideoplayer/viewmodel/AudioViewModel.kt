@@ -194,10 +194,15 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
 
     fun playSong(index: Int) {
         viewModelScope.launch(Dispatchers.Main) {
-            if (index !in _audioList.value.indices) return@launch
+            if (index !in _audioList.value.indices) {
+                Log.e("AudioViewModel", "playSong called with invalid index: $index")
+                return@launch
+            }
 
             val song = _audioList.value[index]
             val uri = Uri.parse(song.path)
+
+            Log.d("AudioViewModel", "Playing song: ${song.title} at $uri")
 
             _currentSongIndex.value = index
             _currentSong.value = song.copy()
@@ -211,6 +216,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
             _isPlaying.value = true
         }
     }
+
 
     fun togglePlayPause() {
         if (_isPlaying.value) {
