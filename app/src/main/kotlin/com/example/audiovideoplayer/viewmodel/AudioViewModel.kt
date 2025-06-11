@@ -31,7 +31,7 @@ import androidx.compose.runtime.setValue
 import com.example.audiovideoplayer.MainActivity
 import com.example.audiovideoplayer.MainActivity.Companion.REQUEST_DELETE_PERMISSION
 import java.io.File
-
+import androidx.core.net.toUri
 
 
 class AudioViewModel(application: Application) : AndroidViewModel(application) {
@@ -84,7 +84,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
                 Player.STATE_ENDED -> {
                     _isPlaying.value = false
                     _currentPosition.value = 0L
-                    handlePlaybackCompletion()  // Call the function here ✅
+                    handlePlaybackCompletion()
                 }
                 Player.STATE_READY -> {
                     _duration.value = exoPlayer.duration
@@ -155,6 +155,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
 
 
 
+
     fun toggleRepeatMode(): String {
         _repeatMode.value = when (_repeatMode.value) {
             RepeatMode.NO_REPEAT -> {
@@ -167,7 +168,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
             }
             else -> RepeatMode.NO_REPEAT
         }
-        return getRepeatModeText() // ✅ Return the updated repeat mode as a String
+        return getRepeatModeText() // Return the updated repeat mode as a String
     }
 
     private fun getRepeatModeText(): String {
@@ -200,7 +201,7 @@ class AudioViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             val song = _audioList.value[index]
-            val uri = Uri.parse(song.path)
+            val uri = song.path.toUri()
 
             Log.d("AudioViewModel", "Playing song: ${song.title} at $uri")
 

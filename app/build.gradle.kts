@@ -55,27 +55,27 @@ dependencies {
 
     // UI
 
-    implementation("androidx.compose.ui:ui:1.7.8") // Or latest
-    implementation("androidx.compose.material3:material3:1.3.1") // Or latest
-    implementation("androidx.navigation:navigation-compose:2.8.8") // Or latest
-    implementation("androidx.compose.ui:ui-tooling-preview:1.7.8") // Or latest
-    implementation("androidx.compose.runtime:runtime-livedata:1.7.8") // Add livedata support for compose
-    debugImplementation("androidx.compose.ui:ui-tooling:1.7.8") // Or latest
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.8") // Or latest
+    implementation("androidx.compose.ui:ui:1.8.2") // Or latest
+    implementation("androidx.compose.material3:material3:1.3.2") // Or latest
+    implementation("androidx.navigation:navigation-compose:2.9.0") // Or latest
+    implementation("androidx.compose.ui:ui-tooling-preview:1.8.2") // Or latest
+    implementation("androidx.compose.runtime:runtime-livedata:1.8.2") // Add livedata support for compose
+    debugImplementation("androidx.compose.ui:ui-tooling:1.8.2") // Or latest
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.8.2") // Or latest
 
     // ViewModel and Lifecycle
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7") // Or latest
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7") // Or latest
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7") // Or latest
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1") // Or latest
 
     // ExoPlayer (Media3)
 
-    implementation("androidx.media3:media3-exoplayer:1.5.1") // Or latest
-    implementation("androidx.media3:media3-ui:1.5.1") // Or latest
-    implementation("androidx.media3:media3-exoplayer-dash:1.5.1") // Add dash support if needed
-    implementation("androidx.media3:media3-exoplayer-hls:1.5.1") // Add hls support if needed
-    implementation("androidx.media3:media3-exoplayer-rtsp:1.5.1") // Add rtsp support if needed
+    implementation("androidx.media3:media3-exoplayer:1.7.1") // Or latest
+    implementation("androidx.media3:media3-ui:1.7.1") // Or latest
+    implementation("androidx.media3:media3-exoplayer-dash:1.7.1") // Add dash support if needed
+    implementation("androidx.media3:media3-exoplayer-hls:1.7.1") // Add hls support if needed
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.7.1") // Add rtsp support if needed
 
     // Permissions Handling
 
@@ -86,7 +86,7 @@ dependencies {
 
     // Coil
 
-    implementation("io.coil-kt:coil-compose:2.2.2")
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
 
 

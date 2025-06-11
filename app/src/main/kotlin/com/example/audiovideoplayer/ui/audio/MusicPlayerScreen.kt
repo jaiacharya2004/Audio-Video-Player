@@ -46,12 +46,18 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
 
 
+    val currentIndex by audioViewModel.currentSongIndex.collectAsState()
 
+    // Remember the initial index to prevent re-initialization
 
-    // ✅ Ensure valid index before playing
-    LaunchedEffect(index, audioList) {
-        if (audioList.isNotEmpty() && index in audioList.indices) {
-            audioViewModel.playSong(index)
+    val initialIndex = remember { index }
+
+    // Ensure valid index before playing
+
+    LaunchedEffect(initialIndex) {
+        // Only initialize if it's a different song than currently playing
+        if (currentIndex != initialIndex) {
+            audioViewModel.playSong(initialIndex)
         }
     }
 
@@ -75,7 +81,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🔹 Top Bar with Back Button
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -89,20 +95,17 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
         Spacer(modifier = Modifier.height(58.dp))
 
-        // 🔹 Album Art
-
-
 
 
         Card(
             modifier = Modifier
                 .size(300.dp)
                 .padding(top = 16.dp)
-                .offset { IntOffset(swipeOffset.value.roundToInt(), 0) } // 🔹 Smooth real-time movement
+                .offset { IntOffset(swipeOffset.value.roundToInt(), 0) } //  Smooth real-time movement
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            val threshold = 150f // 🔹 More natural swipe threshold
+                            val threshold = 150f //  More natural swipe threshold
                             val isNext = swipeOffset.value < -threshold
                             val isPrevious = swipeOffset.value > threshold
 
@@ -110,9 +113,9 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                                 if (isNext || isPrevious) {
                                     val targetOffset = if (isNext) -200f else 200f
 
-                                    swipeOffset.animateTo(targetOffset, tween(200, easing = FastOutSlowInEasing)) // 🔹 Smooth swipe
-                                    audioViewModel.playNextOrPrevious(isNext) // ✅ Change song
-                                    swipeOffset.animateTo(0f, tween(200, easing = FastOutSlowInEasing)) // 🔹 Natural reset
+                                    swipeOffset.animateTo(targetOffset, tween(200, easing = FastOutSlowInEasing)) //  Smooth swipe
+                                    audioViewModel.playNextOrPrevious(isNext) //
+                                    swipeOffset.animateTo(0f, tween(200, easing = FastOutSlowInEasing)) // Natural reset
                                 } else {
                                     swipeOffset.animateTo(0f, tween(200, easing = FastOutSlowInEasing)) // Snap back gently if not enough swipe
                                 }
@@ -120,8 +123,8 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                         }
                     ) { _, dragAmount ->
                         scope.launch {
-                            val newOffset = swipeOffset.value + dragAmount * 0.5f // 🔹 Reduce sensitivity (feels smoother)
-                            swipeOffset.snapTo(newOffset.coerceIn(-300f, 300f)) // 🔹 Limit movement
+                            val newOffset = swipeOffset.value + dragAmount * 0.5f // Reduce sensitivity (feels smoother)
+                            swipeOffset.snapTo(newOffset.coerceIn(-300f, 300f)) //  Limit movement
                         }
                     }
                 },
@@ -138,7 +141,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 🔹 Title and Artist (Center-aligned)
+        // Title and Artist (Center-aligned)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = if (currentSong.title.length > 20) currentSong.title.take(20) + "..." else currentSong.title, color = Color.White,
@@ -158,7 +161,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 🔹 Seek Bar with Time Labels
+        //  Seek Bar with Time Labels
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
@@ -199,8 +202,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                 thumb = {
                     androidx.compose.foundation.Canvas(
                         modifier = Modifier
-                            .size(14.dp) // Smaller circular thumb
-                        // Smaller circular thumb
+                            .size(14.dp)
 
                     ) {
                         drawCircle(color = primaryColor)
@@ -233,23 +235,11 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 🔹 Music Controls (Aligned Center)
+        //  Music Controls (Aligned Center)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -257,7 +247,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 🔂 Repeat Button
+            //  Repeat Button
             IconButton(
                 onClick = {
                     val newModeText = audioViewModel.toggleRepeatMode()
@@ -278,7 +268,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                 )
             }
 
-            // ⏪ Previous Button
+            //  Previous Button
             IconButton(
                 onClick = { audioViewModel.playPrevious() },
                 colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
@@ -289,7 +279,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
                 )
             }
 
-            // ▶️ Play/Pause Button
+            //  Play/Pause Button
             IconButton(
                 onClick = { audioViewModel.togglePlayPause() },
                 colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
@@ -303,7 +293,7 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
 
 
-            // ⏩ Next Button
+            //  Next Button
             IconButton(
                 onClick = { audioViewModel.playNext() },
                 colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
@@ -318,14 +308,14 @@ fun MusicPlayerScreen(navController: NavController, audioViewModel: AudioViewMod
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🔹 Snackbar Host (For Repeat Mode Messages)
+        //  Snackbar Host (For Repeat Mode Messages)
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             SnackbarHost(hostState = snackbarHostState)
         }
     }
 }
 
-// 🔹 Convert milliseconds to "mm:ss" format
+// Convert milliseconds to "mm:ss" format
 fun formatTime(ms: Long): String {
     val minutes = (ms / 1000) / 60
     val seconds = (ms / 1000) % 60
